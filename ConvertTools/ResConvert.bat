@@ -6,7 +6,7 @@ set XLS_NAME=%1
 
 
 echo.
-echo =========Compilation of %XLS_NAME%.xls=========
+echo =========Compilation of %XLS_NAME% =========
 
 
 ::---------------------------------------------------
@@ -28,7 +28,7 @@ del *.txt
 
 @echo on
 ::python ..\xls2protobuf_v3.py %SHEET_NAME% ..\xls\%XLS_NAME%.xls %PROTO_NAME%
-python ..\xls2protobuf_v3.py ..\xls\%XLS_NAME%.xls
+python ..\xls2protobuf_v3.py %XLS_NAME%
 
 
 ::---------------------------------------------------
@@ -36,17 +36,22 @@ python ..\xls2protobuf_v3.py ..\xls\%XLS_NAME%.xls
 ::---------------------------------------------------
 cd ..
 
+::for cs
 set STEP2_PROTO2CS_PATH=.\proto2cs
 set PROTO_DESC=proto.protodesc
 set SRC_OUT=.\
 
+::for cpp
+set STEP2_PROTO2CPP_PATH=.\proto2cpp
+
+
 cd %STEP2_PROTO2CS_PATH%
 
 @echo off
-echo TRY TO DELETE TEMP FILES:
-del *.cs
-del *.protodesc
-del *.txt
+::echo TRY TO DELETE TEMP FILES:
+::del *.cs
+::del *.protodesc
+::del *.txt
 
 
 @echo on
@@ -57,14 +62,20 @@ for /f "delims=." %%i in (protolist.txt) do protoc --descriptor_set_out=%PROTO_D
 ::for /f "delims=." %%i in (protolist.txt) do ProtoGen\protogen -i:%PROTO_DESC% -o:%%i.cs
 for /f "delims=." %%i in (protolist.txt) do protoc --proto_path=..\%STEP1_XLS2PROTO_PATH% ..\%STEP1_XLS2PROTO_PATH%\%%i.proto --csharp_out=%SRC_OUT%
 
+::for cpp
+for /f "delims=." %%i in (protolist.txt) do protoc --proto_path=..\%STEP1_XLS2PROTO_PATH% ..\%STEP1_XLS2PROTO_PATH%\%%i.proto --cpp_out=%SRC_OUT%
+
 cd ..
+
+move /y %STEP2_PROTO2CS_PATH%\*pb.cc %STEP2_PROTO2CPP_PATH%
+move /y %STEP2_PROTO2CS_PATH%\*pb.h %STEP2_PROTO2CPP_PATH%
 
 ::---------------------------------------------------
 ::第三步：将bin和cs拷到Assets里
 ::---------------------------------------------------
 
 @echo off
-set OUT_PATH=..\..\..\..\Client\MODWorkspace\MODUnityProject\Assets
+set OUT_PATH=..\..\..\Client\MODWorkspace\MODUnityProject\Assets
 set DATA_DEST=StreamingAssets\DataConfig
 set CS_DEST=Plugins\ResData
 
@@ -76,26 +87,26 @@ copy %STEP2_PROTO2CS_PATH%\*.cs %OUT_PATH%\%CS_DEST%
 ::---------------------------------------------------
 ::第四步：清除中间文件
 ::---------------------------------------------------
-REM @echo off
-echo TRY TO DELETE TEMP FILES:
-REM cd %STEP1_XLS2PROTO_PATH%
-REM del *_pb2.py
-REM del *_pb2.pyc
-REM del *.proto
-REM del *.bin
-REM del *.log
-REM del *.txt
-REM cd ..
-REM cd %STEP2_PROTO2CS_PATH%
-REM del *.cs
-REM del *.protodesc
-REM del *.txt
-REM cd ..
+:: @echo off
+::echo TRY TO DELETE TEMP FILES:
+:: cd %STEP1_XLS2PROTO_PATH%
+:: del *_pb2.py
+:: del *_pb2.pyc
+:: del *.proto
+:: del *.bin
+:: del *.log
+:: del *.txt
+:: cd ..
+:: cd %STEP2_PROTO2CS_PATH%
+:: del *.cs
+:: del *.protodesc
+:: del *.txt
+:: cd ..
 
 ::---------------------------------------------------
 ::第五步：结束
 ::---------------------------------------------------
-REM cd ..
+:: cd ..
 
 @echo on
 
