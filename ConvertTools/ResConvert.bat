@@ -1,8 +1,8 @@
 @echo off
 
 set XLS_NAME=%1
-set SHEET_NAME=%2
-set PROTO_NAME=%3
+::set SHEET_NAME=%2
+::set PROTO_NAME=%3
 
 
 echo.
@@ -27,8 +27,8 @@ del *.log
 del *.txt
 
 @echo on
-python ..\xls2protobuf_v3.py %SHEET_NAME% ..\xls\%XLS_NAME%.xls %PROTO_NAME%
-
+::python ..\xls2protobuf_v3.py %SHEET_NAME% ..\xls\%XLS_NAME%.xls %PROTO_NAME%
+python ..\xls2protobuf_v3.py ..\xls\%XLS_NAME%.xls
 
 
 ::---------------------------------------------------
