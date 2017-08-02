@@ -1,2 +1,2 @@
-GOODS_INFO ..\xls\goods_info3.xls 
-PERSON_INFO ..\xls\person.xls
+..\xls\商品.xls
+..\xls\角色.xls

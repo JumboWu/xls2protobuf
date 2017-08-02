@@ -39,6 +39,7 @@ set STEP2_PROTO2CS_PATH=.\proto2cs
 set PROTO_DESC=proto.protodesc
 set SRC_OUT=.\
 
+
 cd %STEP2_PROTO2CS_PATH%
 
 @echo off
@@ -63,10 +64,10 @@ cd ..
 ::---------------------------------------------------
 
 @echo off
-set OUT_PATH=E:\project\uframwork\client\Assets
+set OUT_PATH=..\..\..\Client\MODWorkspace\MODUnityProject\Assets
 set DATA_DEST=StreamingAssets\DataConfig
-set CS_DEST=Scripts\ResData
-
+set CS_DEST=Plugins\ResData
+  
 
 @echo on
 copy %STEP1_XLS2PROTO_PATH%\*.bin %OUT_PATH%\%DATA_DEST%
@@ -76,7 +77,7 @@ copy %STEP2_PROTO2CS_PATH%\*.cs %OUT_PATH%\%CS_DEST%
 ::第四步：清除中间文件
 ::---------------------------------------------------
 REM @echo off
-REM echo TRY TO DELETE TEMP FILES:
+echo TRY TO DELETE TEMP FILES:
 REM cd %STEP1_XLS2PROTO_PATH%
 REM del *_pb2.py
 REM del *_pb2.pyc
@@ -97,3 +98,5 @@ REM cd ..
 REM cd ..
 
 @echo on
+
+pause

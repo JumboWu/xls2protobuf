@@ -2,7 +2,7 @@
 
 set XLS_NAME=%1
 set SHEET_NAME=%2
-
+set PROTO_NAME=%3
 
 
 echo.
@@ -27,7 +27,7 @@ del *.log
 del *.txt
 
 @echo on
-python ..\xls2protobuf_v3.py %SHEET_NAME% ..\xls\%XLS_NAME%.xls
+python ..\xls2protobuf_v3.py %SHEET_NAME% ..\xls\%XLS_NAME%.xls %PROTO_NAME%
 
 
 
@@ -64,9 +64,9 @@ cd ..
 ::---------------------------------------------------
 
 @echo off
-set OUT_PATH=E:\project\uframwork\client\Assets
+set OUT_PATH=..\..\..\..\Client\MODWorkspace\MODUnityProject\Assets
 set DATA_DEST=StreamingAssets\DataConfig
-set CS_DEST=Scripts\ResData
+set CS_DEST=Plugins\ResData
 
 
 @echo on
@@ -77,7 +77,7 @@ copy %STEP2_PROTO2CS_PATH%\*.cs %OUT_PATH%\%CS_DEST%
 ::第四步：清除中间文件
 ::---------------------------------------------------
 REM @echo off
-REM echo TRY TO DELETE TEMP FILES:
+echo TRY TO DELETE TEMP FILES:
 REM cd %STEP1_XLS2PROTO_PATH%
 REM del *_pb2.py
 REM del *_pb2.pyc
@@ -98,3 +98,5 @@ REM cd ..
 REM cd ..
 
 @echo on
+
+pause

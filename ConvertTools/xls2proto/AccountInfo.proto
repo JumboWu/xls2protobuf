@@ -1,0 +1,18 @@
+/**
+* @file:   AccountInfo.proto
+* @author: Jumbo 
+* @brief:  这个文件是通过工具自动生成的，建议不要手动修改
+*/
+
+syntax="proto3";
+
+package JX;
+
+message AccountInfo{
+    /** 姓名 */
+    bytes name = 1;
+}
+
+message AccountInfo_ARRAY {
+    repeated AccountInfo items = 1;
+}

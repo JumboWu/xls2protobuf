@@ -1,0 +1,170 @@
+/**
+* @file:   GoodsInfo.proto
+* @author: Jumbo 
+* @brief:  这个文件是通过工具自动生成的，建议不要手动修改
+*/
+
+syntax="proto3";
+
+package JX;
+
+message GoodsInfo{
+    /** 商品ID */
+    uint32 goods_id = 1;
+    /** 商品名 */
+    bytes name = 2;
+    /** 性别
+        不限制：100
+        male：101
+        female：102
+    */
+    uint32 sex = 3;
+    /** 等级限制 */
+    uint32 level_limit = 4;
+    /**  达人俱乐部等级限制
+（普通商品不用配置或配置0） */
+    int32 club_vip_level = 5;
+    /**  2Q币专区
+（普通商品不用配置或配置0） */
+    int32 qb_2 = 6;
+    uint32 consume_type = 7;
+    /** 计时单位
+        0 默认(天)
+        1 分钟
+        2 小时
+        3 天
+        4 月
+        5 年
+    */
+    uint32 time_unit = 8;
+    /** 是否商城上架显示
+        （根据需要配置上下架时间）
+        0 否
+        1 是
+    */
+    uint32 is_online = 9;
+    /** 能否购买
+        （已上架物品必然可买，根据需要配置上下架时间）
+        0 否
+        1 是
+    */
+    uint32 can_buy = 10;
+    /** 可否续费
+        0 否
+        1 是
+    */
+    uint32 can_recharge = 11;
+    bytes online_time = 12;
+    /** 下架时间
+        (YYYY-MM-DD HH:MM:SS)
+        
+        1.不填表示用不下架
+        2.下架的最终确定需结合“有效时间”、“是否上架”
+    */
+    bytes offline_time = 13;
+    repeated uint32 privileged_plat_id_list = 14;
+    /** 是否商城上架显示
+        （根据需要配置上下架时间）
+        0 否
+        1 是
+    */
+    uint32 privileged_plat_is_online = 15;
+    /** 能否购买
+        （已上架物品必然可买，根据需要配置上下架时间）
+        0 否
+        1 是
+    */
+    uint32 privileged_plat_can_buy = 16;
+    /** 可否续费
+        0 否
+        1 是
+    */
+    uint32 privileged_plat_can_recharge = 17;
+    /** 支付方式
+        0 默认不限
+        1 只限QB
+        2 只限点券
+    */
+    uint32 payment_terms = 18;
+    /**  有效时间
+        （过期会从背包删除）
+        需要再添加
+        格式如下，日期和时间中间是空格，不是换行！
+        2011-10-10 00:00:00
+    */
+    bytes valid_time = 19;
+    /** 排序优先级
+        
+        1~? 优先级递减
+        0 最低优先级
+    */
+    uint32 sort_priority = 20;
+    /** 配套编号
+        
+        -1 散装
+        0 子id相同默认成套
+        1~9999 配套编号（允许不同子id）
+    */
+    int32 suit_number = 21;
+    /** 背包排序优先级
+        
+        0~正数优先级递增
+        
+        背包排序有较复杂的具体排序逻辑。本数值只用于背包中的【其他】物品的排序
+    */
+    uint32 bag_sort_priority = 22;
+    bytes status = 23;
+    uint32 rank = 24;
+    /** 折扣（1-100） */
+    uint32 price_discount = 25;
+    /** VIP折扣（1-100） */
+    uint32 vip_discount = 26;
+
+    message Price{
+        /** 点券价格 */
+        uint32 price_dq = 1;
+        /** 金币价格 */
+        uint32 price_gold = 2;
+        /** 天数或数量 */
+        uint32 price_value = 3;
+    }
+
+    repeated Price price_table = 27;
+
+    message GoodsAttr{
+        /** 属性类型
+            1 HP
+            2 体力
+            3 怒气
+            4 攻击力
+            5 暴击
+              
+             
+        */
+        uint32 attr_type = 1;
+        /** 属性值
+            (HP
+            头发：150
+            上身：150
+            下身：100
+            表情：50
+            )
+        */
+        uint32 attr_value = 2;
+    }
+
+    repeated GoodsAttr goods_attr = 28;
+    /** 商品详情 */
+    bytes description = 29;
+    /** 商城购买的限制id
+        详细配置在
+        limitation表
+    */
+    uint32 limit_id = 30;
+    /** 使用 跳转id */
+    bytes subSystemId = 31;
+}
+
+message GoodsInfo_ARRAY {
+    repeated GoodsInfo items = 1;
+}

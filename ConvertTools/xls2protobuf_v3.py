@@ -10,7 +10,8 @@
 #     2 配置数据导入，将配置数据生成PB的序列化后的二进制数据或者文本数据
 #
 # 说明:
-#   1 excel 的前四行用于结构定义, 其余则为数据，按第一行区分, 分别解释：
+#   1 每个Sheet的第一个单元格即左上角那个格子为proto的名字 序列化后 二进制 文本的名字
+#   2 excel 的前四行用于结构定义, 其余则为数据，按第一行区分, 分别解释：
 #       required 必有属性 (V3去掉)
 #       optional 可选属性 （默认）
 #           第二行: 属性类型
@@ -68,6 +69,8 @@
 # 2 xlrd
 ##
 
+# 2017-8-2
+# 由于Python对中文参数支持不是很好，所以转表的时候，以一张xls表导出 不再设置每个传递单个sheet作为参数，直接在表格里面定义proto的名字 表格的第一格
 #使用：
 #python xls2protobuf-V3.py <表格名> <xls文件名>
 ##
@@ -75,6 +78,9 @@
 import xlrd # for read excel
 import sys
 import os
+
+#reload(sys) # Python2.5 初始化后会删除 sys.setdefaultencoding 这个方法，我们需要重新载入 
+#sys.setdefaultencoding('utf-8') 
 
 # TAP的空格数
 TAP_BLANK_NUM = 4
@@ -134,9 +140,10 @@ LOG_ERROR=LogHelp.get_logger().error
 
 class SheetInterpreter:
     """通过excel配置生成配置的protobuf定义文件"""
-    def __init__(self, xls_file_path, sheet_name):
+    def __init__(self, xls_file_path):
         self._xls_file_path = xls_file_path
-        self._sheet_name = sheet_name
+        #self._sheet_name = sheet_name
+        #self._proto_name = proto_name
 
         try :
             self._workbook = xlrd.open_workbook(self._xls_file_path)
@@ -144,64 +151,99 @@ class SheetInterpreter:
             print "open xls file(%s) failed!"%(self._xls_file_path)
             raise
 
-        try :
-            self._sheet =self._workbook.sheet_by_name(self._sheet_name)
-        except BaseException, e :
-            print "open sheet(%s) failed!"%(self._sheet_name)
+        #try :
+        #    self._sheet =self._workbook.sheet_by_name(self._sheet_name)
+        #except BaseException, e :
+        #    print "open sheet(%s) failed!"%(self._sheet_name)
 
         # 行数和列数
-        self._row_count = len(self._sheet.col_values(0))
-        self._col_count = len(self._sheet.row_values(0))
+        #self._row_count = len(self._sheet.col_values(0))
+        #self._col_count = len(self._sheet.row_values(0))
 
-        self._row = 0
-        self._col = 0
+        #self._row = 0
+        #self._col = 0
 
         # 将所有的输出先写到一个list， 最后统一写到文件
-        self._output = []
+        #self._output = []
         # 排版缩进空格数
-        self._indentation = 0
+        #self._indentation = 0
         # field number 结构嵌套时使用列表
         # 新增一个结构，行增一个元素，结构定义完成后弹出
-        self._field_index_list = [1]
+        #self._field_index_list = [1]
         # 当前行是否输出，避免相同结构重复定义
-        self._is_layout = True
+        #self._is_layout = True
         # 保存所有结构的名字
-        self._struct_name_list = []
+        #self._struct_name_list = []
 
-        self._pb_file_name = sheet_name.lower() + ".proto"
+        #self._pb_file_name = proto_name + ".proto"#proto_name.lower() + ".proto"
 
 
     def Interpreter(self) :
+
         """对外的接口"""
-        LOG_INFO("begin Interpreter, row_count = %d, col_count = %d", self._row_count, self._col_count)
+        for sheet in self._workbook.sheets():
+             if "Sheet" in sheet.name:
+                print "Sheet (%s) is not used"%(sheet.name)
+                continue
+             try :
+                 self._sheet =self._workbook.sheet_by_name(sheet.name)
+             except BaseException, e :
+                 print "open sheet(%s) failed!"%(sheet.name)
+            # 行数和列数
+             self._row_count = len(sheet.col_values(0))
+             self._col_count = len(sheet.row_values(0))
+             self._row = 0
+             self._col = 0
+            # 将所有的输出先写到一个list， 最后统一写到文件
+             self._output = []
+            # 排版缩进空格数
+             self._indentation = 0
+            # field number 结构嵌套时使用列表
+            # 新增一个结构，行增一个元素，结构定义完成后弹出
+             self._field_index_list = [1]
+            # 当前行是否输出，避免相同结构重复定义
+             self._is_layout = True
+            # 保存所有结构的名字
+             self._struct_name_list = []
 
-        self._LayoutFileHeader()
+             proto = str(sheet.cell_value(0,0)).strip()
+             if proto == "":
+                print "Not declare proto name sheet(%s)!"%(sheet.name)
+                continue
+             
+             self._proto_name = proto
+             self._pb_file_name = proto + ".proto"#proto_name.lower() + ".proto"
+             
+             
+             LOG_INFO("begin Interpreter sheet(%s) proto:(%s), row_count = %d, col_count = %d", sheet.name, proto,self._row_count, self._col_count)
+             self._LayoutFileHeader()
+        
+             self._output.append("syntax=\"proto3\";\n\n")
+             self._output.append("package JX;\n")
+             self._LayoutStructHead(proto)
+             self._IncreaseIndentation()
+             while self._col < self._col_count :
+                   self._FieldDefine(0)
 
-        self._output.append("syntax=\"proto3\";\n\n")
-        self._output.append("package uFramework;\n")
+             self._DecreaseIndentation()
+             self._LayoutStructTail()
 
-        self._LayoutStructHead(self._sheet_name)
-        self._IncreaseIndentation()
+             self._LayoutArray()
+             self._Write2File()
 
-        while self._col < self._col_count :
-            self._FieldDefine(0)
+             
+             LogHelp.close()
+             # 将PB转换成py格式
+             try :
+                 command = "protoc --python_out=./ " + self._pb_file_name
+                 os.system(command)
+             except BaseException, e :
+                 print "protoc failed!"
+                 raise
 
-        self._DecreaseIndentation()
-        self._LayoutStructTail()
 
-        self._LayoutArray()
 
-        self._Write2File()
-
-        LogHelp.close()
-        # 将PB转换成py格式
-        try :
-            command = "protoc --python_out=./ " + self._pb_file_name
-            os.system(command)
-        except BaseException, e :
-            print "protoc failed!"
-            raise
-
+ 
     def _FieldDefine(self, repeated_num) :
         LOG_INFO("row=%d, col=%d, repeated_num=%d", self._row, self._col, repeated_num)
         field_rule = str(self._sheet.cell_value(FIELD_RULE_ROW, self._col))
@@ -404,8 +446,8 @@ class SheetInterpreter:
 
     def _LayoutArray(self) :
         """输出数组定义"""
-        self._output.append("message " + self._sheet_name + "_ARRAY {\n")
-        self._output.append("    repeated " + self._sheet_name + " items = 1;\n}\n")
+        self._output.append("message " + self._proto_name + "_ARRAY {\n")
+        self._output.append("    repeated " + self._proto_name + " items = 1;\n}\n")
 
     def _Write2File(self) :
         """输出到文件"""
@@ -416,9 +458,10 @@ class SheetInterpreter:
 
 class DataParser:
     """解析excel的数据"""
-    def __init__(self, xls_file_path, sheet_name):
+    def __init__(self, xls_file_path):
         self._xls_file_path = xls_file_path
-        self._sheet_name = sheet_name
+        #self._sheet_name = sheet_name
+        #self._proto_name = proto_name
 
         try :
             self._workbook = xlrd.open_workbook(self._xls_file_path)
@@ -426,61 +469,96 @@ class DataParser:
             print "open xls file(%s) failed!"%(self._xls_file_path)
             raise
 
-        try :
-            self._sheet =self._workbook.sheet_by_name(self._sheet_name)
-        except BaseException, e :
-            print "open sheet(%s) failed!"%(self._sheet_name)
-            raise
+        
 
-        self._row_count = len(self._sheet.col_values(0))
-        self._col_count = len(self._sheet.row_values(0))
 
-        self._row = 0
-        self._col = 0
+        #try :
+        #    self._sheet =self._workbook.sheet_by_name(self._sheet_name)
+        #except BaseException, e :
+        #    print "open sheet(%s) failed!"%(self._sheet_name)
+        #    raise
 
-        try:
-            self._module_name = self._sheet_name.lower() + "_pb2"
-            sys.path.append(os.getcwd())
-            exec('from '+self._module_name + ' import *');
-            self._module = sys.modules[self._module_name]
-        except BaseException, e :
-            print "load module(%s) failed"%(self._module_name)
-            raise
+        #self._row_count = len(self._sheet.col_values(0))
+        #self._col_count = len(self._sheet.row_values(0))
+
+        #self._row = 0
+        #self._col = 0
+
+        #try:
+        #    self._module_name = self._proto_name + "_pb2"#self._proto_name.lower() + "_pb2"
+        #    sys.path.append(os.getcwd())
+        #    exec('from '+self._module_name + ' import *');
+        #    self._module = sys.modules[self._module_name]
+        #except BaseException, e :
+        #    print "load module(%s) failed"%(self._module_name)
+        #    raise
 
     def Parse(self) :
         """对外的接口:解析数据"""
-        LOG_INFO("begin parse, row_count = %d, col_count = %d", self._row_count, self._col_count)
+        
+        for sheet in self._workbook.sheets():
+            if "Sheet" in sheet.name:
+               print "Sheet(%s) is not used"%(sheet.name)
+               continue
+            try:
+                self._sheet = self._workbook.sheet_by_name(sheet.name)
+            except BaseException, e:
+                print "open sheet(%s) failed!"%(sheet.name)
+                raise
+            
+            
+            self._row_count = len(self._sheet.col_values(0))
+            self._col_count = len(self._sheet.row_values(0))
+            self._row = 0
+            self._col = 0
+            
+            proto = str(sheet.cell_value(0,0)).strip()
+            if proto == "" :
+               print "Not declare proto name sheet(%s)!"%(sheet.name)
+               continue
+            try:
+                self._module_name = proto + "_pb2" #self._proto_name.lower() + "_pb2"
+                sys.path.append(os.getcwd())
+                exec('from ' + self._module_name + ' import *')
+                self._module = sys.modules[self._module_name]
+            except BaseException, e:
+                print "load module(%s) failed"%(self._module_name)
+                raise
 
-        item_array = getattr(self._module, self._sheet_name+'_ARRAY')()
+            self._proto_name = proto
+            LOG_INFO("begin parse,sheet(%s) proto(%s) row_count = %d, col_count = %d", sheet.name, proto, self._row_count, self._col_count) 
+            item_array = getattr(self._module, proto +'_ARRAY')()
 
-        # 先找到定义ID的列
-        id_col = 0
-        for id_col in range(0, self._col_count) :
-            info_id = str(self._sheet.cell_value(self._row, id_col)).strip()
-            if info_id == "" :
-                continue
-            else :
-                break
-
-        for self._row in range(4, self._row_count) :
+            # 先找到定义ID的列
+            id_col = 0
+            for id_col in range(0, self._col_count) :
+                if self._row == 0 | id_col == 0 :#proto declare
+                   continue
+                info_id = str(self._sheet.cell_value(self._row, id_col)).strip()
+                if info_id == "" :
+                   continue
+                else :
+                   break
+            
+            for self._row in range(4, self._row_count) :
             # 如果 id 是 空 直接跳过改行
-            info_id = str(self._sheet.cell_value(self._row, id_col)).strip()
-            if info_id == "" :
-                LOG_WARN("%d is None", self._row)
-                continue
-            item = item_array.items.add()
-            self._ParseLine(item)
+                info_id = str(self._sheet.cell_value(self._row, id_col)).strip()
+                if info_id == "" :
+                   LOG_WARN("%d is None", self._row)
+                   continue
+                item = item_array.items.add()
+                self._ParseLine(item)
 
-        LOG_INFO("parse result:\n%s", item_array)
+            LOG_INFO("parse result:\n%s", item_array)
 
-        self._WriteReadableData2File(str(item_array))
+            self._WriteReadableData2File(str(item_array))
+ 
+            data = item_array.SerializeToString()
+            self._WriteData2File(data)
 
-        data = item_array.SerializeToString()
-        self._WriteData2File(data)
 
-
-        #comment this line for test .by kevin at 2013年1月12日 17:23:35
-        LogHelp.close()
+           #comment this line for test .by kevin at 2013年1月12日 17:23:35
+            LogHelp.close()
 
     def _ParseLine(self, item) :
         LOG_INFO("%d", self._row)
@@ -661,13 +739,13 @@ class DataParser:
             raise
 
     def _WriteData2File(self, data) :
-        file_name = self._sheet_name.lower() + ".bin"
+        file_name = self._proto_name + ".bin"#self._proto_name.lower() + ".bin"
         file = open(file_name, 'wb+')
         file.write(data)
         file.close()
 
     def _WriteReadableData2File(self, data) :
-        file_name = self._sheet_name.lower() + ".txt"
+        file_name = self._proto_name + ".txt"#self._proto_name.lower() + ".txt"
         file = open(file_name, 'wb+')
         file.write(data)
         file.close()
@@ -676,25 +754,32 @@ class DataParser:
 
 if __name__ == '__main__' :
     """入口"""
-    if len(sys.argv) < 3 :
-        print "Usage: %s sheet_name(should be upper) xls_file" %(sys.argv[0])
+    print 'system encoding: ',sys.getdefaultencoding()
+
+    if len(sys.argv) < 2 :
+        #print "Usage: %s sheet_name(should be upper) xls_file" %(sys.argv[0])
+        print "Usage: %s xls_file" %(sys.argv[0])
         sys.exit(-1)
 
     # option 0 生成proto和data 1 只生成proto 2 只生成data
     op = 0
-    if len(sys.argv) > 3 :
-        op = int(sys.argv[3])
+    if len(sys.argv) > 2 :
+        op = int(sys.argv[2])
 
-    sheet_name =  sys.argv[1]
-    if (not sheet_name.isupper()):
-        print "sheet_name should be upper"
-        sys.exit(-2)
+    
+    #sheet_name = sys.argv[1]
+    
+    #print "sheet:%s"%(sheet_name)
+    #if (not sheet_name.isupper()):
+    #    print "sheet_name should be upper"
+    #    sys.exit(-2)
 
-    xls_file_path =  sys.argv[2]
+    xls_file_path =  sys.argv[1]
+    #proto_name = sys.argv[3]
 
     if op == 0 or op == 1:
         try :
-            tool = SheetInterpreter(xls_file_path, sheet_name)
+            tool = SheetInterpreter(xls_file_path)
             tool.Interpreter()
         except BaseException, e :
             print "Interpreter Failed!!!"
@@ -705,7 +790,7 @@ if __name__ == '__main__' :
 
     if op == 0 or op == 2:
         try :
-            parser = DataParser(xls_file_path, sheet_name)
+            parser = DataParser(xls_file_path)
             parser.Parse()
         except BaseException, e :
             print "Parse Failed!!!"
