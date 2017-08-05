@@ -85,11 +85,11 @@ copy %STEP2_PROTO2CS_PATH%\*.cs %OUT_PATH%\%CS_DEST%
 ::---------------------------------------------------
 ::第四步：清除中间文件
 ::---------------------------------------------------
-:: @echo off
-::echo TRY TO DELETE TEMP FILES:
-:: cd %STEP1_XLS2PROTO_PATH%
-:: del *_pb2.py
-:: del *_pb2.pyc
+@echo off
+echo TRY TO DELETE TEMP FILES:
+cd %STEP1_XLS2PROTO_PATH%
+del *_pb2.py
+del *_pb2.pyc
 :: del *.proto
 :: del *.bin
 :: del *.log
@@ -104,7 +104,7 @@ copy %STEP2_PROTO2CS_PATH%\*.cs %OUT_PATH%\%CS_DEST%
 ::---------------------------------------------------
 ::第五步：结束
 ::---------------------------------------------------
-:: cd ..
+cd ..
 
 @echo on
 

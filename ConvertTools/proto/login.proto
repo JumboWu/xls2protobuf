@@ -1,0 +1,16 @@
+/**
+* @file: login.proto
+* @author: JUmbo
+* @brief :  登录协议
+*/
+
+syntax="proto3";
+
+package Protocol;
+
+
+message Login{
+	string account = 1;
+	string passwd = 2; 
+}
+
