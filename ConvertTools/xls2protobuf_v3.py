@@ -219,7 +219,7 @@ class SheetInterpreter:
              self._LayoutFileHeader()
         
              self._output.append("syntax=\"proto3\";\n\n")
-             self._output.append("package JX;\n")
+             self._output.append("package X.Res;\n")
              self._LayoutStructHead(proto)
              self._IncreaseIndentation()
              while self._col < self._col_count :
